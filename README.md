@@ -15,8 +15,8 @@ The project is structured into four phases:
 
 ```
 .
-├── Colab_Train_v3.ipynb          # Main training notebook (Google Colab)
-├── inference_v3.ipynb            # Kaggle offline inference notebook
+├── Colab_Train_final.ipynb          # Main training notebook (Google Colab)
+├── inference_final.ipynb            # Kaggle offline inference notebook
 ├── sanity_check_v2.py            # 13-category dataset audit script
 ├── generate_split_metadata.py    # Generates val_unseen.csv from val.csv
 ├── README.md                     # This file
