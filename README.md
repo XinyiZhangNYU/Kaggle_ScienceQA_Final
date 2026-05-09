@@ -56,13 +56,12 @@ python generate_split_metadata.py
 
 ## Phase 2: Training on Google Colab
 
-The training notebook (`Colab_Train_v3.ipynb`) is designed for Google Colab Free Tier (T4 GPU). Training takes approximately **6 hours on T4** (A100 finishes in ~30-40 minutes if you have access).
+The training notebook (`Colab_Train_v3.ipynb`) is designed for Google Colab Free Tier (T4 GPU). Training takes approximately **6 hours on T4**.
 
 ### Hardware Requirements
 - **GPU**: T4 (16GB VRAM, free tier) — sufficient
 - **Peak VRAM usage**: ~10 GB
 - **Training time on T4**: ~6 hours for 3 epochs
-- **Training time on A100**: ~30-40 minutes for 3 epochs
 
 ### Cloud Storage Setup
 
@@ -154,23 +153,18 @@ Create three separate Kaggle datasets. **Naming is critical** — the auto-disco
   ```
   > **Note**: The auto-discovery code will recursively find `model.safetensors`, so the nested subfolder is fine — you do not need to flatten the structure.
 
-#### Dataset 3: Offline Wheels (Optional, for fallback)
-- **Dataset name**: `smolvlm-offline-wheels`
-- **Contents**: Empty folder named `offline_wheels/` is acceptable.
-- **Why optional**: The current inference code uses Kaggle's pre-installed `transformers 5.0` and **does not** require offline wheels. This dataset is referenced for legacy compatibility only — feel free to skip it if you trust Kaggle's default environment.
 
 ### Step 4.2: Configure the Kaggle Notebook
 
 1. Open `inference_v3.ipynb` in Kaggle.
-2. **Settings panel** (right sidebar):
-   - **Accelerator**: GPU T4 ×1
+2. **Settings panel**:
+   - **Accelerator**: GPU T4 × 2
    - **Internet**: **Off** (mandatory — competition rule)
-   - **Persistence**: optional
-3. **Input panel** (right sidebar): Click **"+ Add Input"** and add all three datasets:
+   - 
+3. **Input panel** (right sidebar): Click **"+ Add Input"** and add all two datasets:
    - Pixels to Predictions: DL Vision Challenge (the competition itself)
    - `my-scienceqa-smolvlm-lora`
    - `smolvlm-500m-instruct`
-   - `smolvlm-offline-wheels` (if you created it)
 
    Your Input panel should look like the screenshot below:
    ```
@@ -181,15 +175,13 @@ Create three separate Kaggle datasets. **Naming is critical** — the auto-disco
        └── final_lora_weights
      smolvlm-500m-instruct
        └── SmolVLM-500M-Instruct
-     smolvlm-offline-wheels
-       └── offline_wheels
    ```
 
 ### Step 4.3: Run Inference
 
 Click **Run All**. The notebook executes three cells in order:
 
-#### Cell 0 — Path Auto-Discovery (≈10 seconds)
+#### Cell 0 — Path Auto-Discovery 
 
 Recursively scans `/kaggle/input/` to locate the LoRA folder, base model folder, and dataset paths. **Verify the output before proceeding**:
 
@@ -202,11 +194,11 @@ LORA_PATH contents:  ['adapter_config.json', 'adapter_model.safetensors', ...]
 
 If any path is `None` or contents look wrong, the dataset names or folder structure are off. Re-check Step 4.1.
 
-#### Cell 1 — Environment Check (≈3 seconds)
+#### Cell 1 — Environment Check 
 
 Confirms `AutoModelForImageTextToText` (transformers 5.0) is importable. If running on a Kaggle image with transformers 4.x, falls back automatically.
 
-#### Cell 2 — Inference Loop (≈25 minutes)
+#### Cell 2 — Inference Loop 
 
 Loads model + LoRA, then iterates through all 1,008 test items with a tqdm progress bar. At completion:
 
@@ -236,44 +228,8 @@ After Cell 2 finishes, the file `submission.csv` is automatically saved at the t
 - ✅ Base model is `HuggingFaceTB/SmolVLM-500M-Instruct`
 - ✅ Trainable parameters strictly under 5,000,000 (asserted at every training run)
 - ✅ No external data used
-- ✅ Inference notebook runs with **Internet: Off** on Kaggle T4
+- ✅ Inference notebook runs with **Internet: Off** on Kaggle T4 x2
 - ✅ All seeds fixed at 42 for reproducibility
-
----
-
-## Troubleshooting
-
-| Issue | Likely Cause | Fix |
-|---|---|---|
-| `OSError: model.safetensors not found` | Dataset folder structure changed | Re-check Step 4.1; the folder must contain `config.json + model.safetensors` somewhere in its tree |
-| `AutoModelForVision2Seq not found` (Kaggle) | transformers 5.0 renamed it | Already handled in Cell 1 via try/except — no action needed |
-| Cell 0 reports `LoRA: None` | Dataset name does not contain "lora" | Rename the dataset to include "lora" (case-insensitive) |
-| Submission rejected | `submission.csv` has wrong format | Verify `submission.csv` has columns `id, answer` and 1008 rows |
-| Out of memory during training | Batch size too large for your GPU | Reduce `per_device_train_batch_size` from 2 to 1, increase `gradient_accumulation_steps` from 8 to 16 |
-| Drive disconnects mid-training | Long training session | The notebook's Cell 8 force-flushes Drive before runtime release; if you skip Cell 8, manually run `drive.flush_and_unmount()` before disconnecting |
-
----
-
-## Citation & Acknowledgments
-
-This pipeline builds on:
-- **SmolVLM-500M-Instruct** by HuggingFace TB
-- **PEFT** library for LoRA implementation
-- **transformers** library
-
-Course project for *DL Vision Challenge — Pixels to Predictions*, New York University.
-
-For technical details on the design decisions (label masking, balanced sampling, unseen-validation tracking, the Public LB Repetition Bonus phenomenon), see the accompanying final report.
-
----
-
-## AI Tooling Disclosure
-
-During development, an AI assistant (Claude) was used for: dataset audit schema design, debugging Kaggle environment migrations (transformers 5.0 API rename, dataset directory nesting, EarlyStoppingCallback misbehavior), iterative diagnosis of training curves, and report writing and code commenting.
-
-All core architectural decisions, data filtering thresholds, and final code implementations were independently designed, executed, and verified by the author.
-
----
 
 ## Contact
 
